@@ -1,0 +1,30 @@
+{
+  "config": {
+    "abort": {},
+    "error": {},
+    "step": {
+      "liveboard": {
+        "data": {
+          "name": "Name",
+          "station_live": "Station"
+        }
+      },
+      "connection": {
+        "data": {
+          "name": "Name",
+          "station_from": "Station where the connection departs",
+          "station_to": "Station where the connection arrives",
+          "exclude_vias": "Exclude connections with transfers"
+        }
+      },
+      "choose": {
+        "menu_options": {
+          "liveboard": "Liveboard at a station",
+          "connection": "Connection between 2 stations"
+        },
+        "title": "Choose type"
+      }
+    }
+  },
+  "title": "NMBS"
+}
