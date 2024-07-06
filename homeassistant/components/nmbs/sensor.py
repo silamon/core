@@ -23,7 +23,6 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 import homeassistant.util.dt as dt_util
 
 from .const import (
@@ -75,33 +74,6 @@ def get_ride_duration(departure_time, arrival_time, delay=0):
     ) - dt_util.utc_from_timestamp(int(departure_time))
     duration_time = int(round(duration.total_seconds() / 60))
     return duration_time + get_delay_in_minutes(delay)
-
-
-def setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
-) -> None:
-    """Set up the NMBS sensor with iRail API."""
-
-    api_client = iRail()
-
-    name = config[CONF_NAME]
-    show_on_map = config[CONF_SHOW_ON_MAP]
-    station_from = config[CONF_STATION_FROM]
-    station_to = config[CONF_STATION_TO]
-    station_live = config.get(CONF_STATION_LIVE)
-    excl_vias = config[CONF_EXCLUDE_VIAS]
-
-    sensors: list[SensorEntity] = [
-        NMBSSensor(api_client, name, show_on_map, station_from, station_to, excl_vias)
-    ]
-
-    if station_live is not None:
-        sensors.append(NMBSLiveBoard(api_client, station_live))
-
-    add_entities(sensors, True)
 
 
 async def async_setup_entry(

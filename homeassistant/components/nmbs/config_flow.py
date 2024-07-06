@@ -7,6 +7,9 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_NAME, CONF_TYPE
+from homeassistant.core import DOMAIN as HOMEASSISTANT_DOMAIN
+from homeassistant.data_entry_flow import AbortFlow
+from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
 from homeassistant.helpers.selector import (
     BooleanSelector,
     SelectOptionDict,
@@ -159,3 +162,56 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
+
+    async def async_step_import(self, user_input: dict[str, Any]) -> ConfigFlowResult:
+        """Import configuration from yaml."""
+
+        def create_repair(error: str | None = None) -> None:
+            async_create_issue(
+                self.hass,
+                HOMEASSISTANT_DOMAIN,
+                f"deprecated_yaml_{DOMAIN}",
+                breaks_in_ha_version="2025.3.0",
+                is_fixable=False,
+                issue_domain=DOMAIN,
+                severity=IssueSeverity.WARNING,
+                translation_key="deprecated_yaml",
+                translation_placeholders={
+                    "domain": DOMAIN,
+                    "integration_title": "NMBS",
+                },
+            )
+
+        connection_user_input: dict = {
+            CONF_TYPE: "connection",
+            CONF_STATION_FROM: user_input[CONF_STATION_FROM],
+            CONF_STATION_TO: user_input[CONF_STATION_TO],
+            CONF_NAME: user_input[CONF_NAME],
+            CONF_EXCLUDE_VIAS: user_input[CONF_EXCLUDE_VIAS],
+            CONF_SHOW_ON_MAP: user_input[CONF_SHOW_ON_MAP],
+        }
+
+        if CONF_STATION_LIVE in user_input:
+            liveboard_user_input = {
+                CONF_TYPE: "liveboard",
+                CONF_STATION_LIVE: user_input[CONF_STATION_LIVE],
+                CONF_SHOW_ON_MAP: user_input[CONF_SHOW_ON_MAP],
+                CONF_NAME: user_input[CONF_NAME],
+            }
+
+            try:
+                result = await self.async_step_liveboard(liveboard_user_input)
+            except AbortFlow as ex:
+                if ex.reason == "already_configured":
+                    create_repair()
+                raise ex
+
+        try:
+            result = await self.async_step_connection(connection_user_input)
+        except AbortFlow as ex:
+            if ex.reason == "already_configured":
+                create_repair()
+            raise ex
+
+        create_repair()
+        return result
