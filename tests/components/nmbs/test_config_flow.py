@@ -20,9 +20,9 @@ from homeassistant.data_entry_flow import FlowResultType
 from . import mocked_request_function
 
 DUMMY_DATA: dict[str, Any] = {
-    "STAT_BRUSSELS_NORTH": "BE.NMBS.008812005",
-    "STAT_BRUSSELS_CENTRAL": "BE.NMBS.008813003",
-    "STAT_BRUSSELS_SOUTH": "BE.NMBS.008814001",
+    "STAT_BRUSSELS_NORTH": "Brussels-North",
+    "STAT_BRUSSELS_CENTRAL": "Brussels-Central",
+    "STAT_BRUSSELS_SOUTH": "Brussels-South/Brussels-Midi",
 }
 
 
@@ -168,16 +168,10 @@ async def test_step_import_connection(
         "pyrail.irail.iRail.get_stations",
         wraps=mocked_request_function,
     ):
-        result: dict[str, Any] = await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": config_entries.SOURCE_IMPORT},
-        )
-
         connection = user_input.copy()
         connection[CONF_TYPE] = "connection"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            connection,
+        result: dict[str, Any] = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_IMPORT}, data=connection
         )
 
         await hass.async_block_till_done()
@@ -202,16 +196,12 @@ async def test_step_import_liveboard(
         "pyrail.irail.iRail.get_stations",
         wraps=mocked_request_function,
     ):
+        liveboard = user_input.copy()
+        liveboard[CONF_TYPE] = "liveboard"
         result: dict[str, Any] = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": config_entries.SOURCE_IMPORT},
-        )
-
-        liveboard = user_input.copy()
-        liveboard[CONF_TYPE] = "liveboard"
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            liveboard,
+            data=liveboard,
         )
 
         await hass.async_block_till_done()

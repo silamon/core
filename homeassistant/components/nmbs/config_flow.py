@@ -46,16 +46,20 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.api_client.get_stations
             )
         return [
-            SelectOptionDict(value=station["id"], label=station["name"])
+            SelectOptionDict(value=station["name"], label=station["name"])
             for station in self.stations["station"]
         ]
 
-    async def _fetch_station_for_id(self, station_id: str) -> Any | None:
+    async def _fetch_station_for_name(self, station_name: str) -> Any | None:
+        if self.stations is None:
+            self.stations = await self.hass.async_add_executor_job(
+                self.api_client.get_stations
+            )
         station = next(
             (
                 station
                 for station in self.stations["station"]
-                if station.get("id") == station_id
+                if station.get("name") == station_name
             ),
             None,
         )
@@ -83,15 +87,14 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
 
         errors: dict = {}
         if user_input is not None:
+            print(user_input[CONF_STATION_LIVE])
             await self.async_set_unique_id(f"{user_input[CONF_STATION_LIVE]}")
             self._abort_if_unique_id_configured()
 
             user_input[CONF_TYPE] = "liveboard"
-            config_entry_name = user_input[CONF_NAME]
+            config_entry_name = user_input.get(CONF_NAME, "")
             if config_entry_name == "":
-                config_entry_name = (
-                    f"{await self._fetch_station_for_id(user_input[CONF_STATION_LIVE])}"
-                )
+                config_entry_name = f"{await self._fetch_station_for_name(user_input[CONF_STATION_LIVE])}"
             return self.async_create_entry(
                 title=config_entry_name,
                 data=user_input,
@@ -127,9 +130,9 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             user_input[CONF_TYPE] = "connection"
-            config_entry_name = user_input[CONF_NAME]
+            config_entry_name = user_input.get(CONF_NAME, "")
             if config_entry_name == "":
-                config_entry_name = f"{await self._fetch_station_for_id(user_input[CONF_STATION_FROM])}-{await self._fetch_station_for_id(user_input[CONF_STATION_TO])}"
+                config_entry_name = f"{await self._fetch_station_for_name(user_input[CONF_STATION_FROM])}-{await self._fetch_station_for_name(user_input[CONF_STATION_TO])}"
             return self.async_create_entry(
                 title=config_entry_name,
                 data=user_input,

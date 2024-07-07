@@ -6,7 +6,8 @@
       "liveboard": {
         "data": {
           "name": "Name",
-          "station_live": "Station"
+          "station_live": "Station",
+          "show_on_map": "Show the station on the map"
         }
       },
       "connection": {
@@ -14,7 +15,8 @@
           "name": "Name",
           "station_from": "Station where the connection departs",
           "station_to": "Station where the connection arrives",
-          "exclude_vias": "Exclude connections with transfers"
+          "exclude_vias": "Exclude connections with transfers",
+          "show_on_map": "Show the station on the map"
         }
       },
       "choose": {

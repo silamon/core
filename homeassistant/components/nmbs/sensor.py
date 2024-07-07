@@ -231,6 +231,8 @@ class NMBSSensor(SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
+        if self._name == "":
+            return f"NMBS ({self._station_from} to {self._station_to})"
         return self._name
 
     @property
