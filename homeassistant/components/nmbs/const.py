@@ -1,4 +1,4 @@
-"""The Nmap Tracker integration."""
+"""The NMBS integration."""
 
 from typing import Final
 
