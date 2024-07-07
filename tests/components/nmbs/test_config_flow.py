@@ -13,6 +13,7 @@ from homeassistant.components.nmbs.const import (
     CONF_STATION_TO,
     DOMAIN,
 )
+from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
@@ -143,6 +144,74 @@ async def test_step_connection_data(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             user_input,
+        )
+
+        await hass.async_block_till_done()
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+@pytest.mark.parametrize(
+    "user_input",
+    [
+        {
+            CONF_STATION_FROM: deepcopy(DUMMY_DATA["STAT_BRUSSELS_NORTH"]),
+            CONF_STATION_LIVE: deepcopy(DUMMY_DATA["STAT_BRUSSELS_CENTRAL"]),
+            CONF_STATION_TO: deepcopy(DUMMY_DATA["STAT_BRUSSELS_SOUTH"]),
+        },
+    ],
+)
+async def test_step_import_connection(
+    hass: HomeAssistant, user_input: dict | None
+) -> None:
+    """Test starting a flow by user which filled in data for liveboard."""
+    with patch(
+        "pyrail.irail.iRail.get_stations",
+        wraps=mocked_request_function,
+    ):
+        result: dict[str, Any] = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_IMPORT},
+        )
+
+        connection = user_input.copy()
+        connection[CONF_TYPE] = "connection"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            connection,
+        )
+
+        await hass.async_block_till_done()
+        assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+@pytest.mark.parametrize(
+    "user_input",
+    [
+        {
+            CONF_STATION_FROM: deepcopy(DUMMY_DATA["STAT_BRUSSELS_NORTH"]),
+            CONF_STATION_LIVE: deepcopy(DUMMY_DATA["STAT_BRUSSELS_CENTRAL"]),
+            CONF_STATION_TO: deepcopy(DUMMY_DATA["STAT_BRUSSELS_SOUTH"]),
+        },
+    ],
+)
+async def test_step_import_liveboard(
+    hass: HomeAssistant, user_input: dict | None
+) -> None:
+    """Test starting a flow by user which filled in data for liveboard."""
+    with patch(
+        "pyrail.irail.iRail.get_stations",
+        wraps=mocked_request_function,
+    ):
+        result: dict[str, Any] = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_IMPORT},
+        )
+
+        liveboard = user_input.copy()
+        liveboard[CONF_TYPE] = "liveboard"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            liveboard,
         )
 
         await hass.async_block_till_done()

@@ -23,6 +23,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 import homeassistant.util.dt as dt_util
 
 from .const import (
@@ -74,6 +75,17 @@ def get_ride_duration(departure_time, arrival_time, delay=0):
     ) - dt_util.utc_from_timestamp(int(departure_time))
     duration_time = int(round(duration.total_seconds() / 60))
     return duration_time + get_delay_in_minutes(delay)
+
+
+def setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> None:
+    """Set up the NMBS sensor with iRail API."""
+
+    pass
 
 
 async def async_setup_entry(
