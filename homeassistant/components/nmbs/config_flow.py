@@ -36,7 +36,7 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize."""
         self.api_client = iRail()
-        self.stations: Any | None = None
+        self.stations: dict[str, Any] | None = None
 
     async def _fetch_stations_choices(self):
         """Fetch the stations."""
@@ -46,7 +46,9 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.api_client.get_stations
             )
         return [
-            SelectOptionDict(value=station["name"], label=station["name"])
+            SelectOptionDict(
+                value=station["standardname"], label=station["standardname"]
+            )
             for station in self.stations["station"]
         ]
 
@@ -55,15 +57,19 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
             self.stations = await self.hass.async_add_executor_job(
                 self.api_client.get_stations
             )
-        station = next(
-            (
-                station
-                for station in self.stations["station"]
-                if station.get("name") == station_name
-            ),
-            None,
+        station = (
+            next(
+                (
+                    station
+                    for station in self.stations["station"]
+                    if station.get("standardname") == station_name
+                ),
+                None,
+            )
+            if self.stations is not None
+            else None
         )
-        return station["name"]
+        return station.get("standardname") if station else None
 
     async def async_step_user(
         self, _: dict[str, Any] | None = None
@@ -87,7 +93,6 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
 
         errors: dict = {}
         if user_input is not None:
-            print(user_input[CONF_STATION_LIVE])
             await self.async_set_unique_id(f"{user_input[CONF_STATION_LIVE]}")
             self._abort_if_unique_id_configured()
 
@@ -166,11 +171,7 @@ class NMBSConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_import(self, user_input: dict[str, Any]) -> ConfigFlowResult:
         """Import configuration from yaml."""
 
-        result = None
-        if user_input[CONF_TYPE] == "connection":
-            result = await self.async_step_connection(user_input)
-
         if user_input[CONF_TYPE] == "liveboard":
-            result = await self.async_step_liveboard(user_input)
+            return await self.async_step_liveboard(user_input)
 
-        return result
+        return await self.async_step_connection(user_input)
