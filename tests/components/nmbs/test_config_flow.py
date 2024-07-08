@@ -20,9 +20,9 @@ from homeassistant.data_entry_flow import FlowResultType
 from . import mocked_request_function
 
 DUMMY_DATA: dict[str, Any] = {
-    "STAT_BRUSSELS_NORTH": "Brussels-North",
-    "STAT_BRUSSELS_CENTRAL": "Brussels-Central",
-    "STAT_BRUSSELS_SOUTH": "Brussels-South/Brussels-Midi",
+    "STAT_BRUSSELS_NORTH": "Brussel-Noord/Bruxelles-Nord",
+    "STAT_BRUSSELS_CENTRAL": "Brussel-Centraal/Bruxelles-Central",
+    "STAT_BRUSSELS_SOUTH": "Brussel-Zuid/Bruxelles-Midi",
 }
 
 
