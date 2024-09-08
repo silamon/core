@@ -313,6 +313,17 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
 
         await controller.discover_multirooms()
 
+    @property
+    def group_members(self) -> list[str]:
+        """List of players which are grouped together."""
+        multiroom = self._get_active_multiroom(self.hass, self._bridge)
+        if multiroom is not None:
+            return [multiroom.leader.device.uuid] + [
+                follower.device.uuid for follower in multiroom.followers
+            ]
+
+        return []
+
     @exception_wrap
     async def async_unjoin_player(self) -> None:
         """Remove this player from any group."""

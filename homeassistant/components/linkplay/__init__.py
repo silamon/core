@@ -48,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LinkPlayConfigEntry) -> 
         controller = hass.data[DOMAIN][CONTROLLER]
 
     controller.bridges.append(bridge)
+    await controller.discover_multirooms()
 
     entry.runtime_data = LinkPlayData(bridge=bridge)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
