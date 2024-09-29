@@ -327,9 +327,13 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
     @exception_wrap
     async def async_unjoin_player(self) -> None:
         """Remove this player from any group."""
+        controller: LinkPlayController = self.hass.data[DOMAIN][CONTROLLER]
+
         multiroom = self._get_active_multiroom(self.hass, self._bridge)
         if multiroom is not None:
-            multiroom.remove_follower(self._bridge)
+            await multiroom.remove_follower(self._bridge)
+
+        await controller.discover_multirooms()
 
     def _get_active_multiroom(
         self, hass: HomeAssistant, bridge: LinkPlayBridge
