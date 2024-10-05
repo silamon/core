@@ -33,6 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LinkPlayConfigEntry) -> 
     session: ClientSession = await async_get_client_session(hass)
     bridge: LinkPlayBridge | None = None
 
+    # try create a bridge
     try:
         bridge = await linkplay_factory_httpapi_bridge(entry.data[CONF_HOST], session)
     except LinkPlayRequestException as exception:
@@ -40,6 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LinkPlayConfigEntry) -> 
             f"Failed to connect to LinkPlay device at {entry.data[CONF_HOST]}"
         ) from exception
 
+    # setup the controller and discover multirooms
     controller = None
     if CONTROLLER not in hass.data[DOMAIN]:
         controller = LinkPlayController(session)
@@ -50,6 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LinkPlayConfigEntry) -> 
     controller.bridges.append(bridge)
     await controller.discover_multirooms()
 
+    # forward to platforms
     entry.runtime_data = LinkPlayData(bridge=bridge)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

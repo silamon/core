@@ -29,6 +29,7 @@ from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
     entity_platform,
+    entity_registry as er,
 )
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.dt import utcnow
@@ -296,16 +297,18 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
         """Join `group_members` as a player group with the current player."""
 
         controller: LinkPlayController = self.hass.data[DOMAIN][CONTROLLER]
-        multiroom = self._get_active_multiroom(self.hass, self._bridge)
-        if multiroom is None or multiroom.leader is None:
+        multiroom = self._bridge.multiroom
+        if multiroom is None:
             multiroom = LinkPlayMultiroom(self._bridge)
 
+        registry = er.async_get(self.hass)
         for group_member in group_members:
             bridge = next(
                 (
                     bridge
                     for bridge in controller.bridges
-                    if bridge.device.uuid == group_member
+                    if group_member
+                    == er.async_resolve_entity_id(registry, bridge.device.uuid)
                 ),
                 None,
             )
@@ -316,7 +319,7 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
     @property
     def group_members(self) -> list[str]:
         """List of players which are grouped together."""
-        multiroom = self._get_active_multiroom(self.hass, self._bridge)
+        multiroom = self._bridge.multiroom
         if multiroom is not None:
             return [multiroom.leader.device.uuid] + [
                 follower.device.uuid for follower in multiroom.followers
@@ -329,28 +332,11 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
         """Remove this player from any group."""
         controller: LinkPlayController = self.hass.data[DOMAIN][CONTROLLER]
 
-        multiroom = self._get_active_multiroom(self.hass, self._bridge)
+        multiroom = self._bridge.multiroom
         if multiroom is not None:
             await multiroom.remove_follower(self._bridge)
 
         await controller.discover_multirooms()
-
-    def _get_active_multiroom(
-        self, hass: HomeAssistant, bridge: LinkPlayBridge
-    ) -> LinkPlayMultiroom | None:
-        """Get the active multiroom for given bridge."""
-
-        controller: LinkPlayController = hass.data[DOMAIN][CONTROLLER]
-
-        for multiroom in controller.multirooms:
-            if multiroom.leader.device.uuid == bridge.device.uuid:
-                return multiroom
-
-            for follower in multiroom.followers:
-                if follower.device.uuid == bridge.device.uuid:
-                    return multiroom
-
-        return None
 
     def _update_properties(self) -> None:
         """Update the properties of the media player."""
