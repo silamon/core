@@ -312,7 +312,8 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
                 ),
                 None,
             )
-            await multiroom.add_follower(bridge)
+            if bridge:
+                await multiroom.add_follower(bridge)
 
         await controller.discover_multirooms()
 
