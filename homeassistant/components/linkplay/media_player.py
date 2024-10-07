@@ -23,8 +23,9 @@ from homeassistant.components.media_player import (
     RepeatMode,
     async_process_play_media_url,
 )
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
@@ -34,7 +35,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.dt import utcnow
 
-from . import LinkPlayConfigEntry
+from . import LinkPlayConfigEntry, LinkPlayData
 from .const import CONTROLLER, DOMAIN
 from .utils import MANUFACTURER_GENERIC, get_info_from_project
 
@@ -301,21 +302,41 @@ class LinkPlayMediaPlayerEntity(MediaPlayerEntity):
         if multiroom is None:
             multiroom = LinkPlayMultiroom(self._bridge)
 
-        registry = er.async_get(self.hass)
         for group_member in group_members:
-            bridge = next(
-                (
-                    bridge
-                    for bridge in controller.bridges
-                    if group_member
-                    == er.async_resolve_entity_id(registry, bridge.device.uuid)
-                ),
-                None,
-            )
+            bridge = self._get_linkplay_bridge(group_member)
             if bridge:
                 await multiroom.add_follower(bridge)
 
         await controller.discover_multirooms()
+
+    def _get_linkplay_bridge(self, entity_id: str) -> LinkPlayBridge:
+        """Get linkplay bridge from entity_id."""
+
+        entity_registry = er.async_get(self.hass)
+
+        # Check for valid linkplay media_player entity
+        entity_entry = entity_registry.async_get(entity_id)
+
+        if (
+            entity_entry is None
+            or entity_entry.domain != Platform.MEDIA_PLAYER
+            or entity_entry.platform != DOMAIN
+            or entity_entry.config_entry_id is None
+        ):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_grouping_entity",
+                translation_placeholders={"entity_id": entity_id},
+            )
+
+        config_entry = self.hass.config_entries.async_get_entry(
+            entity_entry.config_entry_id
+        )
+        assert config_entry
+
+        # Return bridge
+        data: LinkPlayData = config_entry.runtime_data
+        return data.bridge
 
     @property
     def group_members(self) -> list[str]:
